@@ -1,5 +1,5 @@
 use crate::chunk::Chunk;
-use crate::rotate;
+use crate::math::Vec3;
 use glium::glutin::event::VirtualKeyCode;
 use std::collections::HashSet;
 
@@ -10,7 +10,7 @@ pub struct Camera {
     acceleration: f32,
     max_speed: f32,
     speed: f32,
-    pub position: (f32, f32, f32),
+    pub position: Vec3,
     angle: (f32, f32),
     gravity: f32,
     vertical_speed: f32,
@@ -22,7 +22,7 @@ impl Default for Camera {
             acceleration: 0.00002,
             speed: 0.0,
             max_speed: 0.005,
-            position: (1.0, 3.0, 1.0),
+            position: Vec3(1.0, 3.0, 1.0),
             angle: (0.0, 0.0),
             gravity: 0.0003,
             vertical_speed: 0.0,
@@ -30,20 +30,11 @@ impl Default for Camera {
     }
 }
 
-fn vec_len((x, y, z): (f32, f32, f32)) -> f32 {
-    (x * x + y * y + z * z).sqrt()
-}
-
-fn normalize((x, y, z): (f32, f32, f32)) -> (f32, f32, f32) {
-    let len = vec_len((x, y, z));
-    (x / len, y / len, z / len)
-}
-
 impl Camera {
-    pub fn get_direction(&self) -> (f32, f32, f32) {
-        let vec = rotate([0.0, 0.0, 1.0], self.angle.1, self.angle.0, 0.0);
-        (vec[0], vec[1], vec[2])
+    pub fn get_direction(&self) -> Vec3 {
+        Vec3(0.0, 0.0, 1.0).rotate(self.angle.0, self.angle.1, 0.0)
     }
+
     pub fn rotate(&mut self, (mut y_axis, mut x_axis): (f64, f64)) {
         y_axis *= 0.001;
         x_axis *= 0.001;
@@ -91,46 +82,28 @@ impl Camera {
             self.vertical_speed = 0.0;
         }
 
-        let mut movement_dir = (0.0, 0.0, 0.0);
+        let mut movement_dir = Vec3(0.0, 0.0, 0.0);
         let camera_dir = self.get_direction();
         if pressed_keys.contains(&VirtualKeyCode::W) {
-            movement_dir = (
-                movement_dir.0 + camera_dir.0,
-                0.0,
-                movement_dir.2 + camera_dir.2,
-            );
+            movement_dir += camera_dir;
         }
         if pressed_keys.contains(&VirtualKeyCode::S) {
-            movement_dir = (
-                movement_dir.0 - camera_dir.0,
-                0.0,
-                movement_dir.2 - camera_dir.2,
-            );
+            movement_dir -= camera_dir;
         }
-        let right = crate::rotate(
-            [camera_dir.0, 0.0, camera_dir.2],
-            0.0,
-            0.5 * std::f32::consts::PI,
-            0.0,
-        );
+        let right =
+            Vec3(camera_dir.0, 0.0, camera_dir.2).rotate(0.5 * std::f32::consts::PI, 0.0, 0.0);
+
         if pressed_keys.contains(&VirtualKeyCode::D) {
-            movement_dir = (movement_dir.0 + right[0], 0.0, movement_dir.2 + right[2]);
+            movement_dir += right;
         }
         if pressed_keys.contains(&VirtualKeyCode::A) {
-            movement_dir = (movement_dir.0 - right[0], 0.0, movement_dir.2 - right[2]);
+            movement_dir -= right
         }
-        if movement_dir != (0.0, 0.0, 0.0) {
-            movement_dir = normalize(movement_dir);
-            movement_dir = (
-                movement_dir.0 * self.speed,
-                0.0,
-                movement_dir.2 * self.speed,
-            );
-            self.position = (
-                self.position.0 + movement_dir.0,
-                self.position.1 + movement_dir.1,
-                self.position.2 + movement_dir.2,
-            );
+        movement_dir.1 = 0.0;
+        if movement_dir != Vec3(0.0, 0.0, 0.0) {
+            movement_dir = movement_dir.normalize();
+            movement_dir = movement_dir.scale(self.speed);
+            self.position += movement_dir;
         }
         self.position.1 += self.vertical_speed;
     }

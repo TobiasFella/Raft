@@ -1,23 +1,23 @@
 use glium::draw_parameters::PolygonMode;
-use glium::glutin;
 use glium::glutin::event::VirtualKeyCode;
 use glium::glutin::window::Fullscreen;
-use glium::uniform;
-use glium::Surface;
+use glium::{glutin, uniform, Surface};
+use glutin::event::DeviceEvent::MouseMotion;
 use glutin::event::ElementState;
+use glutin::event::Event::DeviceEvent;
 use glutin::window::CursorGrabMode;
 use std::collections::HashSet;
-use glutin::event::Event::DeviceEvent;
-use glutin::event::DeviceEvent::MouseMotion;
 
 use camera::Camera;
 use chunk::Chunk;
+use math::Vec3;
 use std::collections::HashMap;
 use std::io::Cursor;
 
 mod camera;
 mod chunk;
 mod cube;
+mod math;
 mod perspective;
 mod vertex;
 mod view_matrix;
@@ -104,7 +104,7 @@ fn main() {
 
         let perspective = perspective::create_perspective(&target);
 
-        let light = [0.0, 1.0, 0.7f32];
+        let light = Vec3(0.0, 1.0, 0.7);
 
         let direction = camera.get_direction();
         let view = view_matrix::view_matrix(&[camera.position.0, camera.position.1, camera.position.2], &[direction.0, direction.1, direction.2], &[0.0, 1.0, 0.0]);
@@ -126,7 +126,7 @@ fn main() {
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0f32]
         ];
-        target.draw(&chunk_shape, &chunk_indices, &program, &uniform! { perspective: perspective, model: model, view: view, u_light: light, diffuse_tex: &diffuse_texture, normal_tex: &normal_map }, &params).unwrap();
+        target.draw(&chunk_shape, &chunk_indices, &program, &uniform! { perspective: perspective, model: model, view: view, u_light: light.tuple(), diffuse_tex: &diffuse_texture, normal_tex: &normal_map }, &params).unwrap();
 
         target.finish().unwrap();
         let next_frame_time = std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
@@ -156,29 +156,4 @@ fn main() {
             _ => (),
         }
     });
-}
-
-fn rotate(vec: [f32; 3], alpha: f32, beta: f32, gamma: f32) -> [f32; 3] {
-    let mat: [[f32; 3]; 3] = [
-        [
-            beta.cos() * gamma.cos(),
-            alpha.sin() * beta.sin() * gamma.cos() - alpha.cos() * gamma.sin(),
-            alpha.cos() * beta.sin() * gamma.cos() + alpha.sin() * gamma.sin(),
-        ],
-        [
-            beta.cos() * gamma.sin(),
-            alpha.sin() * beta.sin() * gamma.sin() + alpha.cos() * gamma.cos(),
-            alpha.cos() * beta.sin() * gamma.sin() - alpha.sin() * gamma.cos(),
-        ],
-        [
-            -beta.sin(),
-            alpha.sin() * beta.cos(),
-            alpha.cos() * beta.cos(),
-        ],
-    ];
-    [
-        vec[0] * mat[0][0] + vec[1] * mat[0][1] + vec[2] * mat[0][2],
-        vec[0] * mat[1][0] + vec[1] * mat[1][1] + vec[2] * mat[1][2],
-        vec[0] * mat[2][0] + vec[1] * mat[2][1] + vec[2] * mat[2][2],
-    ]
 }
