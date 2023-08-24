@@ -6,11 +6,11 @@ in vec2 tex_coords;
 
 out vec3 v_normal;
 out vec3 v_position;
+out vec2 v_tex_coords;
 
 uniform mat4 perspective;
 uniform mat4 view;
 uniform mat4 model;
-out vec2 v_tex_coords;
 
 void main() {
     mat4 modelview = view * model;

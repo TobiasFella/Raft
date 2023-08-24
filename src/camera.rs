@@ -1,5 +1,5 @@
-use crate::chunk::Chunk;
 use crate::math::Vec3;
+use crate::world::World;
 use glium::glutin::event::VirtualKeyCode;
 use std::collections::HashSet;
 
@@ -46,14 +46,14 @@ impl Camera {
         }
         self.angle = (self.angle.0 + y_axis as f32, x_angle);
     }
-    pub fn handle_keys(&mut self, pressed_keys: &HashSet<VirtualKeyCode>, chunk: &Chunk) {
+    pub fn handle_keys(&mut self, pressed_keys: &HashSet<VirtualKeyCode>, world: &mut World) {
         if pressed_keys.contains(&VirtualKeyCode::Space) {
-            let x = self.position.0.floor() as usize;
+            let x = self.position.0.floor() as i32;
             let y = self.position.1;
             let y = y - PLAYER_CAMERA_HEIGHT;
-            let y = y.ceil() as usize;
-            let z = self.position.2.floor() as usize;
-            if chunk.blocks[x][y][z] != 0 {
+            let y = y.ceil() as i32;
+            let z = self.position.2.floor() as i32;
+            if world.block_at(x, y, z).is_some() {
                 self.vertical_speed = JUMP;
             }
         }
@@ -71,12 +71,12 @@ impl Camera {
             self.speed += self.acceleration;
         }
 
-        let x = self.position.0.floor() as usize;
+        let x = self.position.0.floor() as i32;
         let y = self.position.1;
         let y = y - PLAYER_CAMERA_HEIGHT;
-        let y = y.ceil() as usize;
-        let z = self.position.2.floor() as usize;
-        if chunk.blocks[x][y][z] == 0 {
+        let y = y.ceil() as i32;
+        let z = self.position.2.floor() as i32;
+        if !world.block_at(x, y, z).is_some() {
             self.vertical_speed -= self.gravity;
         } else if self.vertical_speed <= 0.0 {
             self.vertical_speed = 0.0;

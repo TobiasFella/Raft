@@ -2,24 +2,27 @@ use crate::cube::Cube;
 use crate::vertex::Vertex;
 use glium::Display;
 use glium::IndexBuffer;
+use glium::VertexBuffer;
 
 pub struct Chunk {
     pub blocks: [[[u8; 16]; 256]; 16],
-}
-
-impl Default for Chunk {
-    fn default() -> Chunk {
-        Chunk {
-            blocks: [[[0; 16]; 256]; 16],
-        }
-    }
+    pub mesh: Option<(VertexBuffer<Vertex>, IndexBuffer<u32>)>,
 }
 
 impl Chunk {
-    pub fn prepare(
-        &self,
-        display: &Display,
-    ) -> (glium::vertex::VertexBuffer<Vertex>, IndexBuffer<u32>) {
+    pub fn new() -> Chunk {
+        let mut chunk = Chunk {
+            blocks: [[[0; 16]; 256]; 16],
+            mesh: None,
+        };
+        for x in 0..16 {
+            for z in 0..16 {
+                chunk.blocks[x][0][z] = 1;
+            }
+        }
+        chunk
+    }
+    pub fn prepare(&mut self, display: &Display) {
         let mut shape = vec![];
         let mut indices: Vec<u32> = vec![];
         let mut current_index = 0u32;
@@ -135,6 +138,6 @@ impl Chunk {
             &indices,
         )
         .unwrap();
-        (shape, indices)
+        self.mesh = Some((shape, indices));
     }
 }
